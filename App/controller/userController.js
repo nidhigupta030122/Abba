@@ -555,7 +555,7 @@ module.exports.updateProfileImages = async (req, res) => {
     const updateImges = await UserModel.findByIdAndUpdate({ _id: req.user._id },
       {
         $set: {
-          profile: "https://52.15.129.94:8000/upload/" + req.file?.filename
+          profile: "http://52.15.129.94:8000/upload/" + req.file?.filename
         },
       }, { new: true }
     )

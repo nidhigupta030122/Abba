@@ -5,7 +5,7 @@ module.exports = app=>{
   
 //Router........................................................................................  
 //auth.......................
-router.post("/updateProfile",checkUserAuth);
+// router.post("/updateProfile",checkUserAuth);
 router.get("/getProfile",checkUserAuth);
 router.post("/SetPaasword",checkUserAuth);
 router.post("/changePassword",checkUserAuth);
@@ -44,7 +44,7 @@ router.post("/googleLogin", userControllers.googleLogin);
    router.post("/updateProfile", checkUserAuth,userControllers.updateProfile);
      router.post(
   "/updateProfileImages",
-  checkUserAuth,
+  checkUserAuth, 
   uploadImg.single("file"),
   userControllers.updateProfileImages
 );
