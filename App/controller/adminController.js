@@ -271,8 +271,11 @@ class adminController {
         ]
       };
     }
+    console.log('query',query);
     let count=await userModels.countDocuments(query);
+    console.log('count',count);
       const Events = await EventModel.find(query).limit(parseInt(limits)).skip(parseInt(skips)*(parseInt(limits))).populate({ path: "userId", select: "name" });
+      
       return res.status(201).json({
         message: "Events fetched Successfully",
         response: Events,

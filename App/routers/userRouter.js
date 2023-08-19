@@ -2,10 +2,28 @@ module.exports = app=>{
   let router =require('express').Router()
   var userControllers  = require("../controller/userController.js")
   var {checkUserAuth}  = require("../middlewares/middlewares.js")
+  const multer = require("multer")
+  var aws = require("aws-sdk"),
+   multerS3 = require("multer-s3");
+ aws.config.update({
+    accessKeyId: "AKIASWKZDQ4PG4WOYOHG",
+    secretAccessKey: "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",
+    Region: "us-east-2",
+});
+s3 = new aws.S3();
+upload = multer({
+    storage: multerS3({
+        s3: s3,
+        bucket: "abbawallet-image",
+        key: function (req, file, cb) {
+            cb(null, "upload/" + Date.now() + file.originalname); //use Date.now() for unique file keys
+        },
+    }),
+});
   
 //Router........................................................................................  
 //auth.......................
-router.post("/updateProfile",checkUserAuth);
+// router.post("/updateProfile",checkUserAuth);
 router.get("/getProfile",checkUserAuth);
 router.post("/SetPaasword",checkUserAuth);
 router.post("/changePassword",checkUserAuth);
@@ -31,21 +49,21 @@ router.post("/googleLogin", userControllers.googleLogin);
    router.post("/Login",userControllers.Login);
    router.post("/fetchUser",userControllers.fetchUser);
    //update...................
-   const multer = require('multer')
-   const storages = multer.diskStorage({
-      destination: function (req, file, cb) {
-          cb(null, 'upload');
-      },
-      filename: function (req, file, cb) {
-          cb(null, file.originalname);
-      }
-  });
-  let uploadImg = multer({ storage: storages });
+  //  const multer = require('multer')
+  //  const storages = multer.diskStorage({
+  //     destination: function (req, file, cb) {
+  //         cb(null, 'upload');
+  //     },
+  //     filename: function (req, file, cb) {
+  //         cb(null, file.originalname);
+  //     }
+  // });
+  // let uploadImg = multer({ storage: storages });
    router.post("/updateProfile", checkUserAuth,userControllers.updateProfile);
      router.post(
   "/updateProfileImages",
-  checkUserAuth,
-  uploadImg.single("file"),
+  checkUserAuth, 
+  upload.single("file"),
   userControllers.updateProfileImages
 );
 
