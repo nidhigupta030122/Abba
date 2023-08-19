@@ -1,15 +1,15 @@
-let UserModel = require('../models/userModel.js')
+let UserModel = require("../models/userModel.js");
 let TransactionModel = require("../models/transactionModel.js");
-let qrModel = require('../models/userQrModel.js')
-let accountModel = require('../models/accountModel.js')
-let userSubscriptionModel=require("../models/userSubscriptionModel.js")
-let userContactModel=require("../models/userContactUs.js")
-let bcrypt = require('bcrypt')
-let jwt = require('jsonwebtoken')
-const nodemailer = require('nodemailer')
+let qrModel = require("../models/userQrModel.js");
+let accountModel = require("../models/accountModel.js");
+let userSubscriptionModel = require("../models/userSubscriptionModel.js");
+let userContactModel = require("../models/userContactUs.js");
+let bcrypt = require("bcrypt");
+let jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 const SendOtp = require("../middlewares/sendOtp");
 
-const smtpTransport = require('nodemailer-smtp-transport')
+const smtpTransport = require("nodemailer-smtp-transport");
 //*****************************************************************************************************************************/
 // User signup   //
 //****************************************************************************************************************************/
@@ -24,7 +24,7 @@ module.exports.signup = async (req, res) => {
     countryName,
     password,
     password_confirmation,
-    mobile_token
+    mobile_token,
   } = req.body;
   // console.log(".....................",req.body);
   if (name && email && password) {
@@ -61,7 +61,7 @@ module.exports.signup = async (req, res) => {
               email_otp: otp,
               countryCode,
               countryName,
-              mobile_token
+              mobile_token,
             });
             await data.save();
             // Generate JWT Token
@@ -72,17 +72,17 @@ module.exports.signup = async (req, res) => {
             );
             // SendOtp(email, null, otp);
             var transporter = nodemailer.createTransport({
-              host: 'abbawallet.com',
+              host: "abbawallet.com",
               port: 465,
               auth: {
-                user: 'noreply@abbawallet.com',
-                pass: 'Noreply@ABBA202201',
-              }
+                user: "noreply@abbawallet.com",
+                pass: "Noreply@ABBA202201",
+              },
             });
             const mailOptions = {
               from: "noreply@abbawallet.com",
               to: email,
-              subject: 'OTP from ABBA Wallet',
+              subject: "OTP from ABBA Wallet",
               html: `<div><span>Hello ${name ? name : ""}</span>
             <br /><br />
             <span>
@@ -109,7 +109,11 @@ module.exports.signup = async (req, res) => {
               if (error) {
                 return console.log(error);
               }
-              console.log("Otp sent your email:", info.messageId, info.response);
+              console.log(
+                "Otp sent your email:",
+                info.messageId,
+                info.response
+              );
             });
             setTimeout(async () => {
               await UserModel.updateOne({ email }, { $set: { email_otp: "" } })
@@ -153,11 +157,9 @@ module.exports.signup = async (req, res) => {
 //****************************************************************************************************************************/
 module.exports.googleLogin = async (req, res, next) => {
   try {
-
     const { name, email_id, social_id, mobile_token, user_img } = req.body;
     const checkEmail = await UserModel.findOne({ email: email_id });
     const checkSocial = await UserModel.findOne({ social_id: social_id });
-
 
     if (!checkEmail && !checkSocial) {
       // const signup = await UserModel.create({
@@ -188,7 +190,6 @@ module.exports.googleLogin = async (req, res, next) => {
         { new: true }
       );
 
-
       // if (!data.account_status) throw new Error("you account is deactivated");
       // if (data.length == 0) {
       //   throw new Error("You are AlReady Register with same email");
@@ -209,7 +210,7 @@ module.exports.googleLogin = async (req, res, next) => {
     return res.status(401).json({
       status: false,
       message: err.message,
-      errorline: err.stack
+      errorline: err.stack,
     });
   }
 };
@@ -226,7 +227,7 @@ module.exports.addPhoneNumber = async (req, res) => {
     const otp = Math.floor(1000 + Math.random() * 9000);
     const result = await UserModel.findOneAndUpdate(
       { _id },
-      { $set: { phoneNumber, countryCode, countryName ,phone_otp: otp } },
+      { $set: { phoneNumber, countryCode, countryName, phone_otp: otp } },
       { new: true }
     );
     SendOtp(null, result.countryCode + result.phoneNumber, otp, result.name);
@@ -299,28 +300,30 @@ module.exports.SignUpverifyOtp = async (req, res) => {
 
     const checkemail = await UserModel.findOne({ email: email });
     if (checkemail.email_otp !== otp) {
-      throw new Error("Invalid Otp")
+      throw new Error("Invalid Otp");
     } else {
-      await UserModel.updateOne({ email: email },
+      await UserModel.updateOne(
+        { email: email },
         {
           $set: {
             email_verified: true,
-          }
-        })
+          },
+        }
+      );
       const checkotp = await UserModel.findOne({ email: email });
       return res.status(200).json({
         status: true,
         message: "Otp verified  successfully",
         respose: checkotp,
-      })
+      });
     }
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
-    })
+    });
   }
-}
+};
 
 //*****************************************************************************************************************************/
 // send Phone Otp   //
@@ -355,7 +358,6 @@ module.exports.sendPhoneOtp = async (req, res) => {
         status: true,
         message: "Otp has been sent to your phone number",
       });
-
     }
   } catch (error) {
     res.status(401).send({
@@ -377,15 +379,15 @@ module.exports.verifyPhoneOtp = async (req, res) => {
     if (check.phone_otp !== otp) throw new Error("Entered otp is incorrect.");
     const data = await UserModel.findOneAndUpdate(
       { phoneNumber },
-      { $set:
-         { 
+      {
+        $set: {
           phoneNumber: newNumber,
-          countryName: countryName, 
-          countryCode: countryCode, 
-          phone_verified: true ,
-          phone_otp:null
-        } 
+          countryName: countryName,
+          countryCode: countryCode,
+          phone_verified: true,
+          phone_otp: null,
         },
+      },
       { new: true }
     );
     res.status(200).send({
@@ -401,7 +403,6 @@ module.exports.verifyPhoneOtp = async (req, res) => {
   }
 };
 
-
 //*****************************************************************************************************************************/
 // Add Question Ans  Api  //
 //****************************************************************************************************************************/
@@ -409,26 +410,28 @@ module.exports.verifyPhoneOtp = async (req, res) => {
 module.exports.addQuestionAns = async (req, res, next) => {
   try {
     const { email, questions, answers } = req.body;
-    await UserModel.updateOne({ email: email },
+    await UserModel.updateOne(
+      { email: email },
       {
         $set: {
           questions: questions.toLowerCase(),
           answers: answers.toLowerCase(),
-        }
-      })
+        },
+      }
+    );
     const question_ans = await UserModel.findOne({ email: email });
     return res.status(200).json({
       status: true,
       message: "Question & Answer Updated Successfully",
       response: question_ans,
-    })
+    });
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
-    })
+    });
   }
-}
+};
 
 //*****************************************************************************************************************************/
 // Question Ans verification  Api   //
@@ -437,30 +440,36 @@ module.exports.verifyQusetionAns = async (req, res, next) => {
   try {
     const { email, questions, answers } = req.body;
     const checkemail = await UserModel.findOne({ email: email });
-    if (questions.match(checkemail.questions) && answers.match(checkemail.answers)) {
-      await UserModel.updateOne({ email: email }, {
-        $set: {
-          questions: questions.toLowerCase(),
-          answers: answers.toLowerCase(),
-          que_ans_verified: true,
+    if (
+      questions.match(checkemail.questions) &&
+      answers.match(checkemail.answers)
+    ) {
+      await UserModel.updateOne(
+        { email: email },
+        {
+          $set: {
+            questions: questions.toLowerCase(),
+            answers: answers.toLowerCase(),
+            que_ans_verified: true,
+          },
         }
-      })
+      );
       const questionans = await UserModel.findOne({ email: email });
       return res.status(200).json({
         status: true,
         messaage: "Questions And Answers Verified Successfully",
         respose: questionans,
-      })
+      });
     } else {
-      throw new Error("Your Question And Answer Do'not Matched")
+      throw new Error("Your Question And Answer Do'not Matched");
     }
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
-    })
+    });
   }
-}
+};
 
 //*****************************************************************************************************************************/
 // Create Confirm Pin  Api   //
@@ -468,24 +477,26 @@ module.exports.verifyQusetionAns = async (req, res, next) => {
 module.exports.createPin = async (req, res) => {
   try {
     const { pin } = req.body;
-    await UserModel.updateOne({ _id: req.user._id },
+    await UserModel.updateOne(
+      { _id: req.user._id },
       {
         $set: {
           pin: pin,
-          pin_verified: true
-        }
-      })
+          pin_verified: true,
+        },
+      }
+    );
     const createpin = await UserModel.findOne({ _id: req.user._id });
     return res.status(200).json({
       status: true,
       message: "Pin generated successfully",
       respose: createpin,
-    })
+    });
   } catch (err) {
     return res.status(401).json({
       status: true,
       message: err.message,
-    })
+    });
   }
 };
 
@@ -497,30 +508,33 @@ module.exports.changePin = async (req, res, next) => {
     const { old_pin, new_pin, confirm_pin } = req.body;
     const checkpin = await UserModel.findOne({ _id: req.user._id });
     if (checkpin.pin !== old_pin) {
-      throw new Error("Entered old pin is incorrect")
+      throw new Error("Entered old pin is incorrect");
     } else {
       if (new_pin !== confirm_pin) {
-        throw new Error("Your new_pin and confirm pin doesn't match")
+        throw new Error("Your new_pin and confirm pin doesn't match");
       }
-      await UserModel.updateOne({ _id: req.user._id }, {
-        $set: {
-          pin: new_pin,
+      await UserModel.updateOne(
+        { _id: req.user._id },
+        {
+          $set: {
+            pin: new_pin,
+          },
         }
-      })
+      );
       const checkpin = await UserModel.findOne({ _id: req.user._id });
       return res.status(200).json({
         status: true,
         message: "Pin updated successfully",
         respose: checkpin,
-      })
+      });
     }
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
-    })
+    });
   }
-}
+};
 
 //*****************************************************************************************************************************/
 //Confrim pin Api  //
@@ -546,33 +560,48 @@ module.exports.confrimPin = async (req, res) => {
   }
 };
 
-
 //*****************************************************************************************************************************/
 //Update Profile Images Api  //
 //****************************************************************************************************************************/
 module.exports.updateProfileImages = async (req, res) => {
   try {
-    const updateImges = await UserModel.findByIdAndUpdate({ _id: req.user._id },
-      {
-        $set: {
-          profile: "http://52.15.129.94:8000/upload/" + req.file?.filename
-        },
-      }, { new: true }
-    )
+    const updateImges = await UserModel.findOne({
+      _id: req.user._id,
+    });
+    // ,
+    //   {
+    //     $set: {
+    //       profile: "http://52.15.129.94:8000/upload/" + req.file?.filename
+    //     },
+    //   }, { new: true }
+    // )
+   
+    let image;
+    if (req.file) {
+      image = req.file.location;
+    } else {
+      image = updateImges.image;
+    }
+    console.log("image", image);
+
+    const imagePath = await UserModel.findByIdAndUpdate({_id: req.user._id}, {
+      $set: {
+        
+          profile: image,
+      }
+  }, { new: true })
     return res.status(200).json({
       status: true,
       message: "Updated",
-      response: updateImges,
+      response: imagePath,
     });
-
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
     });
   }
-
-}
+};
 
 //*****************************************************************************************************************************/
 //Update Profile  Api  //
@@ -622,17 +651,17 @@ module.exports.updateProfile = async (req, res) => {
         //   SendOtp(email, null, fetchdata.otp, fetchdata.name);
         // Sending Otp to email
         var transporter = nodemailer.createTransport({
-          host: 'abbawallet.com',
+          host: "abbawallet.com",
           port: 465,
           auth: {
-            user: 'noreply@abbawallet.com',
-            pass: 'Noreply@ABBA202201',
-          }
+            user: "noreply@abbawallet.com",
+            pass: "Noreply@ABBA202201",
+          },
         });
         const mailOptions = {
           from: "noreply@abbawallet.com",
           to: email,
-          subject: 'OTP from ABBA Wallet',
+          subject: "OTP from ABBA Wallet",
           html: `<div><span>Hello ${name}</span>
           <br /><br />
           <span>
@@ -673,8 +702,7 @@ module.exports.updateProfile = async (req, res) => {
           message: "OTP sent please check",
           response: data,
         });
-      }
-      else {
+      } else {
         const data = await UserModel.findByIdAndUpdate(
           { _id: req.user._id },
           {
@@ -693,8 +721,7 @@ module.exports.updateProfile = async (req, res) => {
           response: data,
         });
       }
-    }
-    else if (userData.email == email) {
+    } else if (userData.email == email) {
       const checkphone = await UserModel.findOne({ phoneNumber: phoneNumber });
       if (!checkphone) {
         const otp = Math.floor(1000 + Math.random() * 9000);
@@ -717,23 +744,26 @@ module.exports.updateProfile = async (req, res) => {
         // const fetchdata = await UserModel.findOne({ phoneNumber : phoneNumber });
         SendOtp(null, userData.countryCode + phoneNumber, otp, userData.name);
         setTimeout(async () => {
-          await UserModel.updateOne({ phoneNumber }, { $set: { phone_otp: "" } })
+          await UserModel.updateOne(
+            { phoneNumber },
+            { $set: { phone_otp: "" } }
+          )
             .then((res) => console.log(res))
             .catch((err) => console.log(err));
         }, 240000);
 
         var transporter = nodemailer.createTransport({
-          host: 'abbawallet.com',
+          host: "abbawallet.com",
           port: 465,
           auth: {
-            user: 'noreply@abbawallet.com',
-            pass: 'Noreply@ABBA202201',
-          }
+            user: "noreply@abbawallet.com",
+            pass: "Noreply@ABBA202201",
+          },
         });
         const mailOptions = {
           from: "noreply@abbawallet.com",
           to: email,
-          subject: 'OTP from ABBA Wallet',
+          subject: "OTP from ABBA Wallet",
           html: `<div><span>Hello ${name}</span>
           <br /><br />
           <span>
@@ -773,16 +803,14 @@ module.exports.updateProfile = async (req, res) => {
           message: "OTP sent please check",
           response: data,
         });
-      }
-      else {
+      } else {
         res.status(200).send({
           success: false,
           Status: "200",
           message: "Phone number is already exist.",
         });
       }
-    }
-    else {
+    } else {
       const checkphone = await UserModel.findOne({ phoneNumber: phoneNumber });
       const checkemail = await UserModel.findOne({ email: email });
       if (!checkphone && !checkemail) {
@@ -805,24 +833,27 @@ module.exports.updateProfile = async (req, res) => {
         const fetchdata = await UserModel.findOne({ phoneNumber: phoneNumber });
         SendOtp(null, userData.countryCode + phoneNumber, otp, userData.name);
         setTimeout(async () => {
-          await UserModel.updateOne({ phoneNumber }, { $set: { phone_otp: "" } })
+          await UserModel.updateOne(
+            { phoneNumber },
+            { $set: { phone_otp: "" } }
+          )
             .then((res) => console.log(res))
             .catch((err) => console.log(err));
         }, 240000);
         //   SendOtp(email, null, fetchdata.otp, fetchdata.name);
         // Sending Otp to email
         var transporter = nodemailer.createTransport({
-          host: 'abbawallet.com',
+          host: "abbawallet.com",
           port: 465,
           auth: {
-            user: 'noreply@abbawallet.com',
-            pass: 'Noreply@ABBA202201',
-          }
+            user: "noreply@abbawallet.com",
+            pass: "Noreply@ABBA202201",
+          },
         });
         const mailOptions = {
           from: "noreply@abbawallet.com",
           to: email,
-          subject: 'OTP from ABBA Wallet',
+          subject: "OTP from ABBA Wallet",
           html: `<div><span>Hello ${name}</span>
             <br /><br />
             <span>
@@ -862,8 +893,7 @@ module.exports.updateProfile = async (req, res) => {
           message: " OTP sent please check",
           response: data,
         });
-      }
-      else {
+      } else {
         res.status(200).send({
           success: false,
           Status: "200",
@@ -893,8 +923,7 @@ module.exports.verifyemailotp = async (req, res, next) => {
         status: false,
         message: "Wrong OTP",
       });
-    }
-    else {
+    } else {
       await UserModel.updateOne(
         { email: email },
         { $set: { otp_verified: "true" } }
@@ -934,33 +963,45 @@ module.exports.fetchProfile = async (req, res) => {
       status: true,
       message: "Profile Fetch Successfully",
       response: fetchProfile,
-    })
-
+    });
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
-    })
+    });
   }
-}
+};
 
 //phoneNumberVerifyOtp.....................................................................................//
 module.exports.verifyOtpPhoneNumber = async (req, res) => {
   try {
-    const { otp } = req.body
+    const { otp } = req.body;
     console.log(req.body);
-    const saved = await UserModel.findOne({ otp: otp })
+    const saved = await UserModel.findOne({ otp: otp });
     if (saved) {
-      res.status(401).send({ "success": "True", "status": "200", "message": "OTP verify succesfully" })
+      res
+        .status(401)
+        .send({
+          success: "True",
+          status: "200",
+          message: "OTP verify succesfully",
+        });
     } else {
-      res.status(401).send({ "success": "false", "status": "401", "message": "Otp InValid" })
-
+      res
+        .status(401)
+        .send({ success: "false", status: "401", message: "Otp InValid" });
     }
   } catch (err) {
     console.log("error", err);
-    res.status(401).send({ "success": "false", "status": "401", "message": "Somethin Went Wrong" })
+    res
+      .status(401)
+      .send({
+        success: "false",
+        status: "401",
+        message: "Somethin Went Wrong",
+      });
   }
-}
+};
 
 //*****************************************************************************************************************************/
 //Login Api  //
@@ -980,20 +1021,16 @@ module.exports.Login = async (req, res) => {
         });
       }
       //   if (!data.account_status) throw new Error("you account is deactivated");
-      const token = jwt.sign(
-        { userID: data._id },
-        process.env.JWT_SECRET_KEY,
-        { expiresIn: "5d" }
-      );
-      if(data.social_id&&data != null){
+      const token = jwt.sign({ userID: data._id }, process.env.JWT_SECRET_KEY, {
+        expiresIn: "5d",
+      });
+      if (data.social_id && data != null) {
         res.status(201).send({
           success: false,
           status: "201",
           message: "You are register with social account",
         });
-      }
-     else if (data != null) {
-      
+      } else if (data != null) {
         const isMatch = await bcrypt.compare(password, data.password);
         if ((data.email === email || data.phoneNumber === email) && isMatch) {
           if (data.account_status === false) {
@@ -1008,7 +1045,11 @@ module.exports.Login = async (req, res) => {
             );
           }
           const checkemail = await UserModel.findOne({ email: email });
-          if (data.email_verified == true && data.phone_verified == true && data.pin_verified == true) {
+          if (
+            data.email_verified == true &&
+            data.phone_verified == true &&
+            data.pin_verified == true
+          ) {
             const token = jwt.sign(
               { userID: data._id },
               process.env.JWT_SECRET_KEY,
@@ -1075,15 +1116,14 @@ module.exports.Login = async (req, res) => {
   }
 };
 
-
 /////////firebaseSendOtp
 var unirest = require("unirest");
 module.exports.sendSms = (req, res) => {
-
   var request = unirest("POST", "https://www.fast2sms.com/dev/bulkV2");
 
   request.headers({
-    authorization: "pruEedJpPwysi5wa0SefSQTmDmEDMfqSsJU9aLJIKbH3S3wHNbFQnW8XLWLm"
+    authorization:
+      "pruEedJpPwysi5wa0SefSQTmDmEDMfqSsJU9aLJIKbH3S3wHNbFQnW8XLWLm",
   });
 
   request.form({
@@ -1092,7 +1132,7 @@ module.exports.sendSms = (req, res) => {
     language: "english",
     route: "v3", // Transactional Route SMS
     variables: "{#AA#}",
-    numbers: "7253972939" // Number present in GET request
+    numbers: "7253972939", // Number present in GET request
   });
 
   request.end(function (res) {
@@ -1102,22 +1142,21 @@ module.exports.sendSms = (req, res) => {
   });
   // response send back
   res.send({
-    "message": "success"
+    message: "success",
   });
 
   // const fast2sms = require('fast-two-sms')
   // var options = {
   //   authorization : "pruEedJpPwysi5wa0SefSQTmDmEDMfqSsJU9aLJIKbH3S3wHNbFQnW8XLWLm",
-  //    message : 'YOUR_MESSAGE_HERE1223456' , 
-  //    numbers : ['7253972939']} 
+  //    message : 'YOUR_MESSAGE_HERE1223456' ,
+  //    numbers : ['7253972939']}
   // fast2sms.sendMessage(options)
   // .then((data)=>{
   // console.log("response",data);
   // }) .catch((error)=>{
   //   console.log("err",error);
   // })
-}
-
+};
 
 //*****************************************************************************************************************************/
 //forgot Password Api  //
@@ -1137,22 +1176,25 @@ module.exports.forgetPassword = async (req, res) => {
     });
 
     if (!checkemail) {
-      throw new Error("You are Not a Register User")
+      throw new Error("You are Not a Register User");
     } else {
       const otp = Math.floor(1000 + Math.random() * 9000);
-      await UserModel.updateOne({ email: email }, {
-        $set: {
-          otp: otp,
+      await UserModel.updateOne(
+        { email: email },
+        {
+          $set: {
+            otp: otp,
+          },
         }
-      })
+      );
       const checkotp = await UserModel.findOne({ email: email });
 
       const check =
         checkotp.email === email
           ? "email"
           : checkotp.phoneNumber === email
-            ? "number"
-            : "none";
+          ? "number"
+          : "none";
 
       SendOtp(
         check === "email" ? email : null,
@@ -1166,12 +1208,12 @@ module.exports.forgetPassword = async (req, res) => {
         auth: {
           user: "noreply@abbawallet.com",
           pass: "Abba@noreply202301",
-        }
+        },
       });
       const mailOptions = {
         from: "noreply@abbawallet.com",
         to: email,
-        subject: 'OTP from ABBA Wallet',
+        subject: "OTP from ABBA Wallet",
         html: `<div><span>Hello ${checkotp.name ? checkotp.name : ""}</span>
         <br /><br />
         <span>
@@ -1211,15 +1253,15 @@ module.exports.forgetPassword = async (req, res) => {
         status: true,
         message: `Otp has been sent to your ${check}, Please check your ${check}`,
         respose: checkotp,
-      })
+      });
     }
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
-    })
+    });
   }
-}
+};
 
 //*****************************************************************************************************************************/
 //forgot Password Verified otp Api  //
@@ -1231,28 +1273,30 @@ module.exports.forgotVerifyOtp = async (req, res) => {
       $or: [{ email }, { phoneNumber: email }],
     });
     if (checkemail.otp !== otp) {
-      throw new Error("Invalid Otp")
+      throw new Error("Invalid Otp");
     } else {
-      await UserModel.updateOne({ email: checkemail.email },
+      await UserModel.updateOne(
+        { email: checkemail.email },
         {
           $set: {
             otp_verified: true,
-          }
-        })
+          },
+        }
+      );
       const checkotp = await UserModel.findOne({ email: checkemail.email });
       return res.status(200).json({
         status: true,
         message: "Otp verified  successfully",
         respose: checkotp,
-      })
+      });
     }
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
-    })
+    });
   }
-}
+};
 
 //*****************************************************************************************************************************/
 //Resent otp Api  //
@@ -1274,8 +1318,8 @@ module.exports.resentOtp = async (req, res, next) => {
         checkemail.email === email
           ? "email"
           : checkemail.phoneNumber === email
-            ? "number"
-            : "none";
+          ? "number"
+          : "none";
       let data = await UserModel.findOneAndUpdate(
         { email: checkemail.email },
         {
@@ -1299,17 +1343,17 @@ module.exports.resentOtp = async (req, res, next) => {
       }, 240000);
       if (check === "email") {
         var transporter = nodemailer.createTransport({
-          host: 'abbawallet.com',
+          host: "abbawallet.com",
           port: 465,
           auth: {
-            user: 'noreply@abbawallet.com',
-            pass: 'Noreply@ABBA202201',
-          }
+            user: "noreply@abbawallet.com",
+            pass: "Noreply@ABBA202201",
+          },
         });
         const mailOptions = {
           from: "noreply@abbawallet.com",
           to: email,
-          subject: 'OTP from Abba Wallet',
+          subject: "OTP from Abba Wallet",
           html: `<div><span>Hello ${checkotp.name ? checkotp.name : ""}</span>
         <br /><br />
         <span>
@@ -1368,34 +1412,35 @@ module.exports.resetPassword = async (req, res, next) => {
     const emails = await UserModel.findOne({ email: email });
     if (emails.otp_verified == "true") {
       if (newPassword !== confirmPassword) {
-        throw new Error('NewPAssword & Confirm Password Do Not matched')
+        throw new Error("NewPAssword & Confirm Password Do Not matched");
       }
-      const salt = await bcrypt.genSalt(10)
-      const hashPassword = await bcrypt.hash(newPassword, salt)
-      await UserModel.updateOne({ email: emails.email },
+      const salt = await bcrypt.genSalt(10);
+      const hashPassword = await bcrypt.hash(newPassword, salt);
+      await UserModel.updateOne(
+        { email: emails.email },
         {
           $set: {
             password: hashPassword,
             otp_verified: false,
           },
-        })
+        }
+      );
       const updatepass = await UserModel.findOne({ email: email });
       return res.status(200).json({
         status: true,
         messaage: "Password  Reset Successfully",
         respose: updatepass,
-      })
+      });
     } else {
-      throw new Error('Your Otp not Verified')
+      throw new Error("Your Otp not Verified");
     }
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
-    })
+    });
   }
-}
-
+};
 
 //*****************************************************************************************************************************/
 //deactive user Api  //
@@ -1425,37 +1470,50 @@ module.exports.deactiveUser = async (req, res) => {
 
 //ChangePassword.............................................................
 module.exports.changePassword = async (req, res) => {
-  const { newPassword, password_confirmation } = req.body
-  const password = req.body.oldPassword
+  const { newPassword, password_confirmation } = req.body;
+  const password = req.body.oldPassword;
   try {
-    const users = await UserModel.findOne(req.user._id)
+    const users = await UserModel.findOne(req.user._id);
     console.log("data123", users);
-    const isMatch = await bcrypt.compare(password, users.password)
+    const isMatch = await bcrypt.compare(password, users.password);
     console.log("data1", isMatch);
     if (isMatch == true) {
       if (newPassword && password_confirmation) {
         if (newPassword !== password_confirmation) {
-          res.status(401).send({ "success": false, "message": "New Password and Confirm New Password doesn't match" })
+          res
+            .status(401)
+            .send({
+              success: false,
+              message: "New Password and Confirm New Password doesn't match",
+            });
         } else {
-          const salt = await bcrypt.genSalt(10)
-          const newHashPassword = await bcrypt.hash(newPassword, salt)
-          await UserModel.findByIdAndUpdate(req.user._id, { $set: { password: newHashPassword } })
-          res.status(200).send({ "success": true, "status": "200", "message": "Password changed succesfully" })
+          const salt = await bcrypt.genSalt(10);
+          const newHashPassword = await bcrypt.hash(newPassword, salt);
+          await UserModel.findByIdAndUpdate(req.user._id, {
+            $set: { password: newHashPassword },
+          });
+          res
+            .status(200)
+            .send({
+              success: true,
+              status: "200",
+              message: "Password changed succesfully",
+            });
         }
       } else {
-        res.send({ "success": false, "message": "All Fields are Required" })
+        res.send({ success: false, message: "All Fields are Required" });
       }
     } else {
-      res.send({ "success": false, "message": "Old Password is Wrong" })
+      res.send({ success: false, message: "Old Password is Wrong" });
     }
   } catch (error) {
     console.log("error", error);
-    res.send({ "success": false, "message": "Something Went  Wrong" })
+    res.send({ success: false, message: "Something Went  Wrong" });
   }
-}
+};
 //generateQrcodePayment
-const qr = require('qrcode');
-const { updateOne } = require('../models/userModel.js')
+const qr = require("qrcode");
+const { updateOne } = require("../models/userModel.js");
 const fs = require("fs");
 const path = require("path");
 // module.exports.qrCode = async (req, res) => {
@@ -1492,9 +1550,8 @@ const path = require("path");
 //     } else {
 //       res.send({ status: true, message: "QR Code fetched successfully", response: data1.qrCode });
 //     }
-//   } 
-  
-  
+//   }
+
 //   catch (error) {
 //     res.status(401).send({
 //       status: false,
@@ -1503,7 +1560,6 @@ const path = require("path");
 //     });
 //   }
 // };
-
 
 // Assuming you have the necessary imports and dependencies
 
@@ -1521,7 +1577,13 @@ module.exports.qrCode = async (req, res) => {
       qr.toDataURL(stjson, async function (err, QrCode) {
         let qr = QrCode.split(",")[1];
         const buffer = Buffer.from(qr, "base64");
-        const imagePath = path.join(__dirname, '..', '..', 'public', `qrCode_${_id}.png`);
+        const imagePath = path.join(
+          __dirname,
+          "..",
+          "..",
+          "public",
+          `qrCode_${_id}.png`
+        );
         fs.writeFileSync(imagePath, buffer);
         const user = await UserModel.findOneAndUpdate(
           { _id },
@@ -1539,7 +1601,11 @@ module.exports.qrCode = async (req, res) => {
         });
       });
     } else {
-      res.send({ status: true, message: "QR Code fetched successfully", response: data1.qrCode });
+      res.send({
+        status: true,
+        message: "QR Code fetched successfully",
+        response: data1.qrCode,
+      });
     }
   } catch (error) {
     res.status(401).send({
@@ -1551,7 +1617,13 @@ module.exports.qrCode = async (req, res) => {
 };
 //add bankAccount
 module.exports.addBankDetail = async (req, res) => {
-  const { accountNumber, reaccountNumber, ifscCode, accountHolderName, userId } = req.body
+  const {
+    accountNumber,
+    reaccountNumber,
+    ifscCode,
+    accountHolderName,
+    userId,
+  } = req.body;
   if (accountNumber && reaccountNumber && ifscCode && userId) {
     try {
       const doc = new accountModel({
@@ -1560,37 +1632,71 @@ module.exports.addBankDetail = async (req, res) => {
         ifscCode: ifscCode,
         accountHolderName: accountHolderName,
         userId: userId,
-
-      })
-      await doc.save()
+      });
+      await doc.save();
       console.log(doc);
-      res.status(200).send({ "success": "True", "status": "200", "message": "Add Bank Details  Successfully", })
+      res
+        .status(200)
+        .send({
+          success: "True",
+          status: "200",
+          message: "Add Bank Details  Successfully",
+        });
     } catch (error) {
-      console.log(error)
-      res.status(401).send({ "success": "false", "Status": "401", "message": "Unable to Add" })
+      console.log(error);
+      res
+        .status(401)
+        .send({ success: "false", Status: "401", message: "Unable to Add" });
     }
   } else {
-    res.status(401).send({ "success": "false", "status": "401", "message": "All fields are required" })
+    res
+      .status(401)
+      .send({
+        success: "false",
+        status: "401",
+        message: "All fields are required",
+      });
   }
-}
+};
 //getBankDetails.............................................................................
 module.exports.getBankDetails = async (req, res) => {
-  const { userId } = req.query
+  const { userId } = req.query;
   try {
-    const saved_user = await accountModel.findOne({ userId: userId })
+    const saved_user = await accountModel.findOne({ userId: userId });
     console.log(saved_user);
     if (saved_user != null) {
-      res.status(200).send({ "success": "True", "status": "200", "message": "get BankDetails succesfully", saved_user })
+      res
+        .status(200)
+        .send({
+          success: "True",
+          status: "200",
+          message: "get BankDetails succesfully",
+          saved_user,
+        });
     } else {
-      res.status(401).send({ "status": "failed", "message": "Something Went Wrong" })
+      res
+        .status(401)
+        .send({ status: "failed", message: "Something Went Wrong" });
     }
   } catch (err) {
-    res.status(401).send({ "success": "True", "status": "failed", "message": "employeeId Is Wrong" })
+    res
+      .status(401)
+      .send({
+        success: "True",
+        status: "failed",
+        message: "employeeId Is Wrong",
+      });
   }
-}
+};
 //updateBankDetails
 module.exports.updatBank = async (req, res) => {
-  const { accountNumber, reaccountNumber, ifscCode, accountHolderName, userId } = req.body;
+  const {
+    accountNumber,
+    reaccountNumber,
+    ifscCode,
+    accountHolderName,
+    userId,
+  } = req.body;
   console.log(req.body);
   try {
     const saved_user = await accountModel.findOneAndUpdate(
@@ -1600,18 +1706,30 @@ module.exports.updatBank = async (req, res) => {
         reaccountNumber: reaccountNumber,
         ifscCode: ifscCode,
         accountHolderName: accountHolderName,
-      },
+      }
     );
     console.log("updateddata", saved_user);
     if (saved_user) {
-      res.status(200).send({ "success": "True", "status": "200", "message": "update BankDetails succesfully" })
+      res
+        .status(200)
+        .send({
+          success: "True",
+          status: "200",
+          message: "update BankDetails succesfully",
+        });
     } else {
-      res.status(401).send({ "success": "false", "status": "401", "message": "Something Went Wrongs" })
+      res
+        .status(401)
+        .send({
+          success: "false",
+          status: "401",
+          message: "Something Went Wrongs",
+        });
     }
   } catch (err) {
     console.log("err", err);
   }
-}
+};
 
 // ********************************************************************************Check Qr code Id***********************************************************************************
 
@@ -1622,19 +1740,19 @@ module.exports.CheckQrCode = async (req, res) => {
       return res.status(401).json({
         status: false,
         message: "User not found",
-      })
+      });
     }
     const data = await UserModel.findOne({ _id: user_id });
     if (!data) {
       return res.status(401).json({
         status: false,
         message: "User not found",
-      })
+      });
     } else {
       return res.status(200).json({
         status: true,
         message: "User found",
-      })
+      });
     }
   } catch (err) {
     return res.status(401).json({
@@ -1643,7 +1761,7 @@ module.exports.CheckQrCode = async (req, res) => {
       stack: err.stack,
     });
   }
-}
+};
 
 ///////////////// fetch single user //////////////////////////////////////
 
@@ -1691,7 +1809,6 @@ module.exports.userTransaction = async (req, res) => {
     });
   }
 };
-
 
 //*****************************************************************************************************************************/
 ///////Activate User Account API
@@ -1750,13 +1867,15 @@ module.exports.forgotWalletPin = async (req, res) => {
       auth: {
         user: "noreply@abbawallet.com",
         pass: "Abba@noreply202301",
-      }
+      },
     });
     const mailOptions = {
       from: "noreply@abbawallet.com",
       to: email,
-      subject: 'OTP from ABBA Wallet',
-      html: `<div><span>Hello ${checkotp.name ? checkotp.name : "Sir/Mam"}</span>
+      subject: "OTP from ABBA Wallet",
+      html: `<div><span>Hello ${
+        checkotp.name ? checkotp.name : "Sir/Mam"
+      }</span>
       <br /><br />
       <span>
         Thank you for choosing ABBA Wallet. As per your request, we are sending you your One-Time Password (OTP) for accessing your account.
@@ -1810,9 +1929,8 @@ module.exports.forgotWalletPinOtp = async (req, res) => {
     const { email, wallet_otp } = req.body;
     const checkemail = await UserModel.findOne({ _id: req.user._id });
     if (checkemail.wallet_otp !== wallet_otp) {
-      throw new Error("Invalid Otp")
-    }
-    else {
+      throw new Error("Invalid Otp");
+    } else {
       await UserModel.updateOne(
         { _id: req.user._id },
         {
@@ -1826,13 +1944,13 @@ module.exports.forgotWalletPinOtp = async (req, res) => {
         status: true,
         message: "Wallet Otp verified successfully",
         respose: checkpinotp,
-      })
+      });
     }
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
-    })
+    });
   }
 };
 
@@ -1845,29 +1963,29 @@ module.exports.changeWalletPin = async (req, res, next) => {
     const { newPin, confirmPin } = req.body;
     const email = await UserModel.findOne({ _id: req.user._id });
     if (newPin !== confirmPin) {
-      throw new Error('New Pin & Confirm Pin Does Not matched')
+      throw new Error("New Pin & Confirm Pin Does Not matched");
     }
-    await UserModel.updateOne({ _id: req.user._id },
+    await UserModel.updateOne(
+      { _id: req.user._id },
       {
         $set: {
           pin: newPin,
         },
-      })
+      }
+    );
     const updatepin = await UserModel.findOne({ _id: req.user._id });
     return res.status(200).json({
       status: true,
       messaage: "Wallet Pin Reset Successfully",
       response: updatepin,
-    })
+    });
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
-    })
+    });
   }
 };
-
-
 
 //*****************************************************************************************************************************/
 //update name  Api  //
@@ -1875,28 +1993,27 @@ module.exports.changeWalletPin = async (req, res, next) => {
 
 module.exports.updateName = async (req, res, next) => {
   try {
-
     const { name } = req.body;
-    const updatename = await UserModel.findByIdAndUpdate({ _id: req.user._id },
+    const updatename = await UserModel.findByIdAndUpdate(
+      { _id: req.user._id },
       {
-        $set: { name: name }
-      }, { new: true })
+        $set: { name: name },
+      },
+      { new: true }
+    );
     return res.status(200).json({
       status: true,
       message: "Updated successfully",
       response: updatename,
-    })
-
+    });
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.messaage,
       stack: err.stack,
-
-    })
+    });
   }
-}
-
+};
 
 //*****************************************************************************************************************************/
 //update email  Api  //
@@ -1904,11 +2021,10 @@ module.exports.updateName = async (req, res, next) => {
 
 module.exports.updateEmail = async (req, res, next) => {
   try {
-
     const { email } = req.body;
-    const checkemail = await UserModel.findOne({ email: email })
-    if (checkemail) throw new Error("email already exits")
-    const userData = await UserModel.findOne({ _id: req.user._id })
+    const checkemail = await UserModel.findOne({ email: email });
+    if (checkemail) throw new Error("email already exits");
+    const userData = await UserModel.findOne({ _id: req.user._id });
     const otp = Math.floor(1000 + Math.random() * 9000);
     const data = await UserModel.findByIdAndUpdate(
       { _id: req.user._id },
@@ -1921,17 +2037,17 @@ module.exports.updateEmail = async (req, res, next) => {
       { new: true }
     );
     var transporter = nodemailer.createTransport({
-      host: 'abbawallet.com',
+      host: "abbawallet.com",
       port: 465,
       auth: {
-        user: 'noreply@abbawallet.com',
-        pass: 'Noreply@ABBA202201',
-      }
+        user: "noreply@abbawallet.com",
+        pass: "Noreply@ABBA202201",
+      },
     });
     const mailOptions = {
       from: "noreply@abbawallet.com",
       to: email,
-      subject: 'OTP from ABBA Wallet',
+      subject: "OTP from ABBA Wallet",
       html: `<div><span>Hello ${data.name}</span>
           <br /><br />
           <span>
@@ -1966,16 +2082,15 @@ module.exports.updateEmail = async (req, res, next) => {
       status: true,
       message: "Otp send please your email",
       response: data,
-    })
+    });
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
       stack: err.stack,
-    })
+    });
   }
-}
-
+};
 
 //*****************************************************************************************************************************/
 //update email  Api  //
@@ -1984,9 +2099,9 @@ module.exports.updateEmail = async (req, res, next) => {
 module.exports.updatePhoneNumber = async (req, res, next) => {
   try {
     const { phoneNumber, countryName, countryCode } = req.body;
-    const checkNumber = await UserModel.findOne({ phoneNumber: phoneNumber })
-    if (checkNumber) throw new Error("Phone number already exits")
-    const userData = await UserModel.findOne({ _id: req.user._id })
+    const checkNumber = await UserModel.findOne({ phoneNumber: phoneNumber });
+    if (checkNumber) throw new Error("Phone number already exits");
+    const userData = await UserModel.findOne({ _id: req.user._id });
     const otp = Math.floor(1000 + Math.random() * 9000);
     const data = await UserModel.findByIdAndUpdate(
       { _id: req.user._id },
@@ -2003,50 +2118,47 @@ module.exports.updatePhoneNumber = async (req, res, next) => {
       status: true,
       message: "Otp send please your Phone",
       response: data,
-    })
+    });
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
       stack: err.stack,
-    })
+    });
   }
-
-}
+};
 
 module.exports.userSubscription = async (req, res, next) => {
   try {
-    const { email} = req.body;
-     let data=await userSubscriptionModel.create({email})
+    const { email } = req.body;
+    let data = await userSubscriptionModel.create({ email });
     return res.status(200).json({
       status: true,
       message: "Message add successfully",
       response: data,
-    })
+    });
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
       stack: err.stack,
-    })
+    });
   }
-
-}
+};
 module.exports.userContactUs = async (req, res, next) => {
   try {
-    const { name , email,messaage} = req.body;
-     let data=await userContactModel.create({name,email,messaage})
+    const { name, email, messaage } = req.body;
+    let data = await userContactModel.create({ name, email, messaage });
     return res.status(200).json({
       status: true,
       message: "Message add successfully !",
       response: data,
-    })
+    });
   } catch (err) {
     return res.status(401).json({
       status: false,
       message: err.message,
       stack: err.stack,
-    })
+    });
   }
-
-}
+};
